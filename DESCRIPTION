@@ -1,0 +1,16 @@
+Package: mfdbatlantis
+Type: Package
+Title: MareFrame Atlantis routines
+Version: 4.0-0
+Date: 2015-11-06
+Author: Jamie Lentin
+Maintainer: Jamie Lentin <jamie.lentin@shuttlethread.com>
+Description: Functions to extract data from the output of Atlantis runs
+License: GPL-3
+Depends: R (>= 3.1.1)
+Imports:
+    ncdf4,
+    XML,
+    logging (>= 0.7-103)
+Suggests: unittest (>= 1.2)
+LazyData: true
