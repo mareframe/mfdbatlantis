@@ -1,6 +1,4 @@
 # R/atlantis_functions.R
-export(atlantis_xml_attributes)
-export(atlantis_nc_variables)
 export(atlantis_read_areas)
 export(atlantis_functional_groups)
 export(atlantis_fisheries)

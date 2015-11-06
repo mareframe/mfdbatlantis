@@ -1,6 +1,6 @@
 # Given an XML document, pull out group_attributes from attribute group_name,
 # return as data.frame
-atlantis_xml_attributes <- function (xml_doc, group_name, group_attributes) {
+fetch_xml_attributes <- function (xml_doc, group_name, group_attributes) {
     xmlAllAttrs <- Vectorize(XML::xmlAttrs)
     attr_xpath <- paste0(
         "./Attribute[contains('|",
@@ -17,7 +17,7 @@ atlantis_xml_attributes <- function (xml_doc, group_name, group_attributes) {
 
 # Given an ncdf4 file, and any number of vectors (e.g. c('Birds1', Birds2), 'Nums'),
 # combine these vectors in all possible ways and return all arrays from the ncdf4 file
-atlantis_nc_variables <- function(nc_out, ...) {
+fetch_nc_variables <- function(nc_out, ...) {
     ncvar_get_all <- Vectorize(ncdf4::ncvar_get, vectorize.args = 'varid', SIMPLIFY = "array")
     nc_variables <- apply(expand.grid(..., stringsAsFactors = FALSE), 1, function (x) paste(x, collapse="_"))
     ncvar_get_all(nc_out, nc_variables)
@@ -51,7 +51,7 @@ atlantis_read_areas <- function (adir, bgm_file) {
 
 atlantis_functional_groups <- function (adir, fg_file, bio_file) {
     fg_doc <- XML::xmlParse(file.path(adir, fg_file))
-    fg_data <- atlantis_xml_attributes(fg_doc, 'FunctionalGroup', c('GroupCode', 'Name', 'LongName', 'IsPredator', 'IsTurnedOn', 'NumCohorts', 'NumStages', 'NumAgeClassSize'))
+    fg_data <- fetch_xml_attributes(fg_doc, 'FunctionalGroup', c('GroupCode', 'Name', 'LongName', 'IsPredator', 'IsTurnedOn', 'NumCohorts', 'NumStages', 'NumAgeClassSize'))
 
     # Pull out useful flags from biology file and combine
     xmlAllAttrs <- Vectorize(XML::xmlAttrs)
@@ -71,13 +71,13 @@ atlantis_functional_groups <- function (adir, fg_file, bio_file) {
 
 atlantis_fisheries <- function (adir, fisheries_file) {
     fisheries_doc <- XML::xmlParse(file.path(adir, fisheries_file))
-    fisheries_data <- atlantis_xml_attributes(fisheries_doc, 'Fishery', c('Code', 'Index', 'Name', 'IsRec', 'NumSubFleets'))
+    fisheries_data <- fetch_xml_attributes(fisheries_doc, 'Fishery', c('Code', 'Index', 'Name', 'IsRec', 'NumSubFleets'))
     fisheries_data
 }
 
 atlantis_run_options <- function (adir, opt_file) {
     opt_doc <- XML::xmlParse(file.path(adir, opt_file))
-    opt_data <- atlantis_xml_attributes(opt_doc, "ScenarioOptions", c("dt"))
+    opt_data <- fetch_xml_attributes(opt_doc, "ScenarioOptions", c("dt"))
 
     return(opt_data)
 }
@@ -118,8 +118,8 @@ atlantis_fg_count <- function (adir,
     nc_out <- ncdf4::nc_open(file.path(adir, nc_file))
 
     # Read in all StructN and Nums data for the functional group
-    fg_Nums <- atlantis_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums')
-    fg_StructN <- atlantis_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'StructN')
+    fg_Nums <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums')
+    fg_StructN <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'StructN')
 
     # Populate initial data frame that contains the combinatorial explosions of the axes
     age_class_size <- as.numeric(as.character(fg_group$NumAgeClassSize))
@@ -161,7 +161,7 @@ atlantis_fisheries_catch <- function(adir,
         start_year = 1948) {
     nc_out <- ncdf4::nc_open(file.path(adir, catch_file))
 
-    catch_tonnes <- atlantis_nc_variables(nc_out, species, 'Catch', paste0('FC', fishery$Index))
+    catch_tonnes <- fetch_nc_variables(nc_out, species, 'Catch', paste0('FC', fishery$Index))
 
     # Populate initial data frame that contains the combinatorial explosions of the axes
     dims <- expand.grid(
