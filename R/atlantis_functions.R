@@ -40,7 +40,7 @@ atlantis_read_areas <- function (adir, bgm_file) {
     }
 
     # Extract parts of file we are interested in
-    bgm_lines <- readLines(bgm_file)
+    bgm_lines <- readLines(file.path(adir, bgm_file))
     area_data <- merge(
         get_box_attribute(bgm_lines, "label", "name"),
         get_box_attribute(bgm_lines, "area", "size"),
