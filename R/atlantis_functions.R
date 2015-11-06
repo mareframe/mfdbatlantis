@@ -46,6 +46,7 @@ atlantis_read_areas <- function (adir, bgm_file) {
         get_box_attribute(bgm_lines, "area", "size"),
         sort = FALSE)
     area_data$id <- seq_len(nrow(area_data))
+    area_data$size <- as.numeric(area_data$size)
     return(area_data)
 }
 
@@ -92,7 +93,7 @@ atlantis_tracer <- function (adir,
     tracer <- ncdf4::ncvar_get(nc_out, tracer_name)
     dims <- expand.grid(
         depth = nc_out$dim$z$vals,
-        area = as.character(area_data$name),
+        areacell = as.character(area_data$name),
         time = nc_out$dim$t$vals,
         stringsAsFactors = TRUE)
 
@@ -100,7 +101,7 @@ atlantis_tracer <- function (adir,
     month_secs <- year_secs / 12 # TODO: If month == 30 days is used, this will slip
     data.frame(
         depth = dims$depth,
-        area = dims$area,
+        areacell = dims$areacell,
         time = factor(dims$time),
         # Add start_year to years
         year = as.numeric(dims$time) / year_secs + start_year,
