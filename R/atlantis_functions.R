@@ -104,7 +104,7 @@ atlantis_tracer <- function (adir,
         areacell = dims$areacell,
         time = factor(dims$time),
         # Add start_year to years
-        year = as.numeric(dims$time) / year_secs + start_year,
+        year = round(as.numeric(dims$time) / year_secs + start_year),
         # Months are remainder from year_secs divided by month_secs
         month = (as.numeric(dims$time) %% year_secs) %/% month_secs + 1,
         value = as.numeric(tracer),
@@ -142,7 +142,7 @@ atlantis_fg_count <- function (adir,
         time = factor(dims$time),
         species = fg_group$LongName,
         # Add start_year to years
-        year = as.numeric(dims$time) / year_secs + start_year,
+        year = round(as.numeric(dims$time) / year_secs + start_year),
         # Months are remainder from year_secs divided by month_secs
         month = (as.numeric(dims$time) %% year_secs) %/% month_secs + 1,
         age = dims$age,
