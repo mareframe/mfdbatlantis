@@ -1,11 +1,10 @@
 library(mfdb)
 library(utils)
 
-mfdb('', destroy_schema = TRUE)  # TODO: Not good in a demo.
 mdb <- mfdb('Test')
 
 # Find all the files in this directory
-ice_dir <- 'atlantis-Iceland-NoFishing20150909-1'
+ice_dir <- 'atlantis-Iceland-NoFishing20150909-1'  # TODO: Shouldn't be in the demo either
 
 ice_run_options <- atlantis_run_options(ice_dir, 'RunNoFish.xml')
 
