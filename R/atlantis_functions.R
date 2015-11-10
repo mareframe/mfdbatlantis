@@ -172,9 +172,15 @@ atlantis_fisheries_catch <- function(adir,
         stringsAsFactors = TRUE)
 
     # Combine with catch data
+    year_secs <- 60 * 60 * 24 * 365  # NB: Atlantis treats years as 365 days, no execeptions
+    month_secs <- year_secs / 12 # TODO: If month == 30 days is used, this will slip
     data.frame(
         area = dims$area,
         time = dims$time,
+        # Add start_year to years
+        year = round(as.numeric(dims$time) / year_secs + start_year),
+        # Months are remainder from year_secs divided by month_secs
+        month = (as.numeric(dims$time) %% year_secs) %/% month_secs + 1,
         fishery = fishery$Code,
         species = dims$species,
         weight_total = as.numeric(catch_tonnes),

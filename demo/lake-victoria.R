@@ -33,7 +33,25 @@ for (fgName in c()) {  # TODO: Add some functional groups
 }
 
 lv_fisheries <- atlantis_fisheries(lv_dir, 'LVFisheries_New.xml')
-lv_catch <- atlantis_fisheries_catch(lv_dir, 'outputLVCATCH.nc',
-    lv_area_data,
-    lv_fisheries[lv_fisheries$Code == 'llHooks',],
-    c('LN', 'CG'))
+mfdb_import_vessel_taxonomy(mdb, data.frame(
+    id = lv_fisheries$Index,
+    name = lv_fisheries$Code,
+    full_hame = lv_fisheries$Name,
+    stringsAsFactors = FALSE))
+
+for (fisheryCode in lv_fisheries$Code) {
+    fishery <- lv_fisheries[lv_fisheries$Code == fisheryCode,]
+
+    lv_catch <- atlantis_fisheries_catch(lv_dir, 'outputLVCATCH.nc',
+        lv_area_data,
+        fishery,
+        c('LN', 'CG'))
+    mfdb_import_survey(mdb, data.frame(
+        year = lv_catch$year,
+        month = lv_catch$month,
+        areacell = lv_catch$area,
+        vessel = lv_catch$fishery,
+        species = c('COD'),  # TODO: Mapping
+        weight_total = lv_catch$weight_total,
+        stringsAsFactors = TRUE), data_source = paste0("atlantisFishery_", fisheryCode))
+}
