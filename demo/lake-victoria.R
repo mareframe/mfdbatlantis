@@ -1,8 +1,7 @@
 library(mfdb)
 library(utils)
 
-# TODO: Assign proper case study IDs here
-mdb <- mfdb('Test')
+mdb <- mfdb('Atlantis-LVic')
 
 # Find all the files in this directory
 lv_dir <- 'atlantis-L_Vic-OutputFolderTest2'  # TODO: Shouldn't be in the demo either

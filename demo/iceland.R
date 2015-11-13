@@ -1,7 +1,7 @@
 library(mfdb)
 library(utils)
 
-mdb <- mfdb('Test')
+mdb <- mfdb('Atlantis-Iceland')
 
 # Find all the files in this directory
 ice_dir <- 'atlantis-Iceland-NoFishing20150909-1'  # TODO: Shouldn't be in the demo either
