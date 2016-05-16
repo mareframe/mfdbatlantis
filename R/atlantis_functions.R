@@ -23,6 +23,20 @@ fetch_nc_variables <- function(nc_out, ...) {
     ncvar_get_all(nc_out, nc_variables)
 }
 
+# Constants to convert atlantis data
+atl_year_secs <- 60 * 60 * 24 * 365  # NB: Atlantis treats years as 365 days, no execeptions
+atl_month_secs <- atl_year_secs / 12 # TODO: If month == 30 days is used, this will slip
+
+# Year vector from dims$time
+atlantis_time_to_years <- function (atl_time, start_year) {
+    round(as.numeric(atl_time) / atl_year_secs + start_year),
+}
+# month vector from dims$time
+atlantis_time_to_months <- function (atl_time, start_year) {
+    # Months are remainder from atl_year_secs divided by month_secs
+    month = (as.numeric(atl_time) %% atl_year_secs) %/% atl_month_secs + 1,
+}
+
 # Read required details in from bgm file
 atlantis_read_areas <- function (adir, bgm_file) {
     if (length(bgm_file) != 1) stop("One bgm file required, not ", length(bgm_file))
@@ -97,16 +111,12 @@ atlantis_tracer <- function (adir,
         time = nc_out$dim$t$vals,
         stringsAsFactors = TRUE)
 
-    year_secs <- 60 * 60 * 24 * 365  # NB: Atlantis treats years as 365 days, no execeptions
-    month_secs <- year_secs / 12 # TODO: If month == 30 days is used, this will slip
     data.frame(
         depth = dims$depth,
         areacell = dims$areacell,
         time = factor(dims$time),
-        # Add start_year to years
-        year = round(as.numeric(dims$time) / year_secs + start_year),
-        # Months are remainder from year_secs divided by month_secs
-        month = (as.numeric(dims$time) %% year_secs) %/% month_secs + 1,
+        year = atlantis_time_to_years(dims$time, start_year),
+        month = atlantis_time_to_months(dims$time),
         value = as.numeric(tracer),
         stringsAsFactors = TRUE)
 }
@@ -133,18 +143,14 @@ atlantis_fg_count <- function (adir,
         stringsAsFactors = TRUE)
 
     # Add extra values to make this MFDB-compliant
-    year_secs <- 60 * 60 * 24 * 365  # NB: Atlantis treats years as 365 days, no execeptions
-    month_secs <- year_secs / 12 # TODO: If month == 30 days is used, this will slip
     weight_grams <- 3.65 * as.numeric(fg_StructN) * 5.7 * 20 / 1000  # TODO: Ish?
     data.frame(
         depth = dims$depth,
         area = dims$area,
         time = factor(dims$time),
         species = fg_group$LongName,
-        # Add start_year to years
-        year = round(as.numeric(dims$time) / year_secs + start_year),
-        # Months are remainder from year_secs divided by month_secs
-        month = (as.numeric(dims$time) %% year_secs) %/% month_secs + 1,
+        year = atlantis_time_to_years(dims$time, start_year),
+        month = atlantis_time_to_months(dims$time),
         age = dims$age,
         # Maturity stage is mature iff ageClass greater than FLAG_AGE_MAT
         maturity_stage = ifelse(dims$age > fg_group$FLAG_AGE_MAT * age_class_size, 5, 1),
