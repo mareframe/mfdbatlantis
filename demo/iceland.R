@@ -1,4 +1,5 @@
 library(mfdb)
+library(mfdbatlantis)
 library(utils)
 
 mdb <- mfdb('Atlantis-Iceland')
@@ -30,3 +31,34 @@ for (fgName in c("Cod", "Haddock")) {
     ice_fg_count$areacell <- ice_fg_count$area
     mfdb_import_survey(mdb, ice_fg_count, data_source = paste0('atlantisTracer_', fgName))
 }
+
+fgName <- 'Cod'
+fg <- ice_functional_groups[c(ice_functional_groups$Name == fgName),]
+fg_species <- unlist(mfdb_find_species(as.character(fg$LongName))['name', 1])
+
+# Fetch consumption and tracer indexes for functional group
+consumption <- atlantis_consumption(
+    ice_dir,
+    ice_area_data,
+    nc_file = 'OutputNoFish.nc',
+    diet_file = 'OutputNoFishDietCheck.txt',
+    fg_group = fg,
+    ingestion_period = c('Cod' = 4),
+    start_year = 1948)
+
+# Reduce area down to a pretend survey time/area
+consumption <- consumption[consumption$Year == 1950 & consumption$Area %in% c("Box20", "Box21", "Box22"),]
+# Assume we only catch 0.0001% of possible available
+consumption$Count <- round(consumption$Count * 0.000001)
+# Add a fixed digestion time of 60 hours
+consumption$DigestionTime <- 50 * 60 * 60
+
+# Convert this into the 2 data.frames import_stomach requires
+stomach <- atlantis_consumption_to_stomach(consumption, predator_map = c(
+    FCD = 'COD'
+), prey_map = c(
+    # We're only interested in 2 species
+    FHE = mfdb_find_species('Clupea Harengus')['name',][[1]],
+    FCA = mfdb_find_species('Capelin')['name',][[1]]
+))
+mfdb_import_stomach(mdb, stomach$predator_data, stomach$prey_data, data_source = "stomach_Cod")
