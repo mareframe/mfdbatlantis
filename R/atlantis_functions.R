@@ -23,18 +23,20 @@ fetch_nc_variables <- function(nc_out, ...) {
     ncvar_get_all(nc_out, nc_variables)
 }
 
-# Constants to convert atlantis data
-atl_year_secs <- 60 * 60 * 24 * 365  # NB: Atlantis treats years as 365 days, no execeptions
-atl_month_secs <- atl_year_secs / 12 # TODO: If month == 30 days is used, this will slip
+# NB: Atlantis treats years as 365 days, no execeptions
+atl_secs_to_month <- 60 * 60 * 24 * (365 / 12)
 
 # Year vector from dims$time
 atlantis_time_to_years <- function (atl_time, start_year) {
-    round(as.numeric(atl_time) / atl_year_secs + start_year),
+    # NB: The 1year-in-sec steps in the ncout files aren't very smooth due to machine innacuracy,
+    # so force to nearest month first, which works for a few years.
+    months <- round(as.numeric(atl_time) / atl_secs_to_month)
+    return(months %/% 12 + start_year)
 }
 # month vector from dims$time
 atlantis_time_to_months <- function (atl_time, start_year) {
-    # Months are remainder from atl_year_secs divided by month_secs
-    month = (as.numeric(atl_time) %% atl_year_secs) %/% atl_month_secs + 1,
+    months <- round(as.numeric(atl_time) / atl_secs_to_month)
+    return(months %% 12 + 1)
 }
 
 # Read required details in from bgm file
@@ -178,15 +180,11 @@ atlantis_fisheries_catch <- function(adir,
         stringsAsFactors = TRUE)
 
     # Combine with catch data
-    year_secs <- 60 * 60 * 24 * 365  # NB: Atlantis treats years as 365 days, no execeptions
-    month_secs <- year_secs / 12 # TODO: If month == 30 days is used, this will slip
     data.frame(
         area = dims$area,
         time = dims$time,
-        # Add start_year to years
-        year = round(as.numeric(dims$time) / year_secs + start_year),
-        # Months are remainder from year_secs divided by month_secs
-        month = (as.numeric(dims$time) %% year_secs) %/% month_secs + 1,
+        year = atlantis_time_to_years(dims$time, start_year),
+        month = atlantis_time_to_months(dims$time),
         fishery = fishery$Code,
         species = dims$species,
         weight_total = as.numeric(catch_tonnes),
