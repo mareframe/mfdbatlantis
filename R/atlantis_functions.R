@@ -1,3 +1,10 @@
+# Select the first file matching the glob in adir
+first_file <- function (...) {
+    files <- sort(Sys.glob(file.path(...)))
+    if (length(files) == 0) stop("No files found for ", c(...))
+    return(files[[1]])
+}
+
 # Given an XML document, pull out group_attributes from attribute group_name,
 # return as data.frame
 fetch_xml_attributes <- function (xml_doc, group_name, group_attributes) {
@@ -198,87 +205,108 @@ atlantis_fisheries_catch <- function(adir,
 
 atlantis_consumption <- function (adir,
         area_data,
-        nc_file = Sys.glob(file.path(adir, "output*.nc")),
-        diet_file = Sys.glob(file.path(adir, "*DietCheck.txt")),
+        nc_file = first_file(adir, "*.nc"),
+        prod_file = first_file(adir, "*PROD.nc"),
         fg_group,
         ingestion_period = c(),
         start_year = 1948) {
-    nc_out <- ncdf4::nc_open(file.path(adir, nc_file))
+    nc_out <- ncdf4::nc_open(nc_file)
 
-    # Read in all Nums data for the functional group
     fg_Nums <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums')
-
-    # Populate initial data frame that contains the combinatorial explosions of the axes
-    age_class_size <- as.numeric(as.character(fg_group$NumAgeClassSize))
     dims <- expand.grid(
         depth = nc_out$dim$z$vals,
         area = as.character(area_data$name),
         time = nc_out$dim$t$vals,
-        # Age is mid-point of sequence of age_class_size values
-        age = seq(age_class_size / 2, by = age_class_size, length.out = as.numeric(as.character(fg_group$NumCohorts))),
+        cohort = seq_len(as.character(fg_group$NumCohorts)),
         stringsAsFactors = FALSE)
-    nums <- data.frame(
-        Depth = dims$depth,
-        Area = dims$area,
-        Year = atlantis_time_to_years(dims$time, start_year),
-        Month = atlantis_time_to_months(dims$time),
-        Group = as.character(fg_group$GroupCode),
-        Cohort = (dims$age - age_class_size/2) / age_class_size,  # Convert back to cohort
-        Stock = 0,  # TODO: Multiple stocks?
-        Age = dims$age,
-        Count = as.numeric(fg_Nums),
+    df_nums <- data.frame(
+        depth = dims$depth,
+        area = dims$area,
+        year = atlantis_time_to_years(dims$time, start_year),
+        month = atlantis_time_to_months(dims$time),
+        group = as.character(fg_group$GroupCode),
+        cohort = dims$cohort,
+        count = as.numeric(fg_Nums),
+        stringsAsFactors = TRUE)
+    df_nums <- aggregate(count ~ area + year + month + group + cohort, df_nums, sum)
+
+    nc_prod <- ncdf4::nc_open(prod_file)
+    fg_Eat <- fetch_nc_variables(nc_prod, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Eat')
+    dims <- expand.grid(
+        area = as.character(area_data$name),
+        time = nc_prod$dim$t$vals,
+        cohort = seq_len(fg_group$NumCohorts),
         stringsAsFactors = FALSE)
-    nums <- nums[nums$Count > 0, ]
-    # Sum depth boxes together
-    nums <- aggregate(Count ~ Area + Year + Month + Group + Cohort + Stock + Age, nums, sum)
+    df_eat <- data.frame(
+        area = dims$area,
+        year = atlantis_time_to_years(dims$time, start_year),
+        month = atlantis_time_to_months(dims$time),
+        group = as.character(fg_group$GroupCode),
+        cohort = dims$cohort,
+        consumption = as.numeric(fg_Eat),
+        stringsAsFactors = TRUE)
 
-    # Headings: Time, Pred. Functional Group, Pred. Cohort, Pred. Stock, Prey functional group, ...
-    diet <- read.table(file.path(adir, diet_file), header = TRUE, stringsAsFactors = FALSE)
-    # Diet's time is in days, not secs.
-    diet$Year <- diet$Time %/% 365 + start_year
-    diet$Month <- (diet$Time %% 365) %/% (365 / 12) + 1
+    df_out <- merge(df_nums, df_eat, by = c('area', 'year', 'month', 'group', 'cohort'))
+    # Consumption is mgN/day for the whole cohort. Divide to get rates for individual
+    df_out$ind_consumption <- df_out$consumption / df_out$count
 
-    # Merge nums and diet together
-    consumption <- merge(nums, diet, by = c('Year', 'Month', 'Group', 'Cohort', 'Stock'), sort = TRUE)
-    return(consumption)
+    # Add age to data
+    age_class_size <- as.numeric(as.character(fg_group$NumAgeClassSize))
+    df_out$age <- df_out$cohort * age_class_size + age_class_size / 2
+
+    return(df_out)
 }
 
-atlantis_consumption_to_stomach <- function (consumption_data, predator_map, prey_map) {
-    # Repeat each row x number of times according to column (col_name), throw away (col_name)
+atlantis_stomach_content <- function (adir,
+        consumption,
+        predator_map,
+        prey_map,
+        diet_file = first_file(adir, "*DietCheck.txt"),
+        start_year = 1948) {
     repeat_by_col <- function(df, col_name) {
         df[rep(seq_len(nrow(df)), df[, col_name]), names(df) != col_name]
     }
-
     combine_df_list <- function(df_list) {
         do.call(rbind, df_list)
     }
 
-    # Make 1 row for each predator and label it
-    consumption_data <- repeat_by_col(consumption_data, 'Count')
-    consumption_data$stomach_name <- seq_len(nrow(consumption_data))
+    # Repeat each row (count) times, and label it
+    consumption <- repeat_by_col(consumption, 'count')
+    consumption$stomach_name <- seq_len(nrow(consumption))
+
+    diet <- read.table(diet_file, header = TRUE, stringsAsFactors = FALSE)
+    diet$Year <- diet$Time %/% 365 + start_year
+    diet$Month <- (diet$Time %% 365) %/% (365 / 12) + 1
 
     predator_data <- data.frame(
-        year = consumption_data$Year,
-        month = consumption_data$Month,
-        areacell = consumption_data$Area,
-        species = predator_map[consumption_data$Group],
-        age = consumption_data$Age,
-        stomach_name = consumption_data$stomach_name,
+        year = consumption$year,
+        month = consumption$month,
+        areacell = consumption$area,
+        species = predator_map[consumption$group],
+        age = consumption$age,
+        stomach_name = consumption$stomach_name,
         stringsAsFactors = TRUE)
 
-    prey_data <- combine_df_list(lapply(seq(nrow(consumption_data)), function (i) {
+    prey_data <- combine_df_list(lapply(seq_len(nrow(consumption)), function (i) {
+        predator <- consumption[i,]
         # Generate a vector of prey quantities
-        prey <- structure(as.numeric(consumption_data[i, names(prey_map)]), names = prey_map)
-        prey <- round(prey * consumption_data[i, 'DigestionTime'])
-        prey <- prey[prey > 0]
+        prey <- diet[
+            diet$Year == predator$year &
+            diet$Month == predator$month &
+            diet$Group == predator$group &
+            diet$Cohort == predator$cohort,
+            names(prey_map)]
+        names(prey) <- prey_map
+        if (length(prey) == 0) stop("No Prey for", predator$year, predator$month, predator$group, predator$cohort)
+        prey <- prey * predator$ind_consumption # Scale total consumption
 
         if (length(prey) == 0) {
             return(data.frame())
         }
         data.frame(
-            stomach_name = consumption_data[i, 'stomach_name'],
+            stomach_name = predator$stomach_name,
             species = names(prey),
-            count = prey,
+            weight_total = mgn_to_grams(prey),
             stringsAsFactors = TRUE)
     }))
 

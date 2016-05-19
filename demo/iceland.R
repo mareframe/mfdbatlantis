@@ -40,21 +40,17 @@ fg_species <- unlist(mfdb_find_species(as.character(fg$LongName))['name', 1])
 consumption <- atlantis_consumption(
     ice_dir,
     ice_area_data,
-    nc_file = 'OutputNoFish.nc',
-    diet_file = 'OutputNoFishDietCheck.txt',
     fg_group = fg,
     ingestion_period = c('Cod' = 4),
     start_year = 1948)
 
 # Reduce area down to a pretend survey time/area
-consumption <- consumption[consumption$Year == 1950 & consumption$Area %in% c("Box20", "Box21", "Box22"),]
+consumption <- consumption[consumption$year == 1950 & consumption$area %in% c("Box20", "Box21", "Box22"),]
 # Assume we only catch 0.0001% of possible available
-consumption$Count <- round(consumption$Count * 0.000001)
-# Add a fixed digestion time of 60 hours
-consumption$DigestionTime <- 50 * 60 * 60
+consumption$count <- round(consumption$count * 0.000001)
 
 # Convert this into the 2 data.frames import_stomach requires
-stomach <- atlantis_consumption_to_stomach(consumption, predator_map = c(
+stomach <- atlantis_stomach_content(ice_dir, consumption, predator_map = c(
     FCD = 'COD'
 ), prey_map = c(
     # We're only interested in 2 species
