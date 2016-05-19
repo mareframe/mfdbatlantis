@@ -23,6 +23,11 @@ fetch_nc_variables <- function(nc_out, ...) {
     ncvar_get_all(nc_out, nc_variables)
 }
 
+# Convert MgN to grams
+mgn_to_grams <- function (mgn) {
+    3.65 * as.numeric(mgn) * 5.7 * 20 / 1000
+}
+
 # NB: Atlantis treats years as 365 days, no execeptions
 atl_secs_to_month <- 60 * 60 * 24 * (365 / 12)
 
@@ -145,7 +150,7 @@ atlantis_fg_count <- function (adir,
         stringsAsFactors = TRUE)
 
     # Add extra values to make this MFDB-compliant
-    weight_grams <- 3.65 * as.numeric(fg_StructN) * 5.7 * 20 / 1000  # TODO: Ish?
+    weight_grams <- mgn_to_grams(fg_StructN)
     data.frame(
         depth = dims$depth,
         area = dims$area,
