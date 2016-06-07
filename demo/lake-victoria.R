@@ -1,4 +1,5 @@
 library(mfdb)
+library(mfdbatlantis)
 library(utils)
 
 mdb <- mfdb('Atlantis-LVic')
