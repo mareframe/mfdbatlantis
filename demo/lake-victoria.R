@@ -26,7 +26,7 @@ for (fgName in c()) {  # TODO: Add some functional groups
     if (length(speciesCode) != 1) {
         stop("No direct species match: ", speciesCode)
     }
-    lv_fg_count <- atlantis_fg_count(lv_dir, 'outputLV.nc', lv_area_data, fg)
+    lv_fg_count <- atlantis_fg_tracer(lv_dir, lv_area_data, fg)
     lv_fg_count$species <- speciesCode
     lv_fg_count$areacell <- lv_fg_count$area
     mfdb_import_survey(mdb, lv_fg_count, data_source = paste0('atlantisTracer_', fgName))

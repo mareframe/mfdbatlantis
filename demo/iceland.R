@@ -27,7 +27,7 @@ for (fgName in c("Cod", "Haddock")) {
     if (length(speciesCode) != 1) {
         stop("No direct species match: ", speciesCode)
     }
-    ice_fg_count <- atlantis_fg_count(ice_dir, 'OutputNoFish.nc', ice_area_data, fg)
+    ice_fg_count <- atlantis_fg_tracer(ice_dir, ice_area_data, fg)
     ice_fg_count$species <- speciesCode
     ice_fg_count$areacell <- ice_fg_count$area
     mfdb_import_survey(mdb, ice_fg_count, data_source = paste0('atlantisTracer_', fgName))
@@ -38,12 +38,11 @@ fg <- ice_functional_groups[c(ice_functional_groups$Name == fgName),]
 fg_species <- unlist(mfdb_find_species(as.character(fg$LongName))['name', 1])
 
 # Fetch consumption and tracer indexes for functional group
-consumption <- atlantis_consumption(
+consumption <- atlantis_fg_tracer(
     ice_dir,
     ice_area_data,
     fg_group = fg,
-    ingestion_period = c('Cod' = 4),
-    start_year = 1948)
+    consumption = TRUE)
 
 # Reduce area down to a pretend survey time/area
 consumption <- consumption[consumption$year == 1950 & consumption$area %in% c("Box20", "Box21", "Box22"),]

@@ -135,45 +135,6 @@ atlantis_tracer <- function (adir,
         stringsAsFactors = TRUE)
 }
 
-atlantis_fg_count <- function (adir,
-        area_data,
-        fg_group,
-        nc_file = first_file(adir, "*.nc"),
-        start_year = attr(adir, 'start_year')) {
-    nc_out <- ncdf4::nc_open(file.path(adir, nc_file))
-
-    # Read in all StructN and Nums data for the functional group
-    fg_Nums <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums')
-    fg_StructN <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'StructN')
-
-    # Populate initial data frame that contains the combinatorial explosions of the axes
-    age_class_size <- as.numeric(as.character(fg_group$NumAgeClassSize))
-    dims <- expand.grid(
-        depth = nc_out$dim$z$vals,
-        area = as.character(area_data$name),
-        time = nc_out$dim$t$vals,
-        # Age is mid-point of sequence of age_class_size values
-        age = seq(age_class_size / 2, by = age_class_size, length.out = as.numeric(as.character(fg_group$NumCohorts))),
-        stringsAsFactors = TRUE)
-
-    # Add extra values to make this MFDB-compliant
-    weight_grams <- mgn_to_grams(fg_StructN)
-    data.frame(
-        depth = dims$depth,
-        area = dims$area,
-        time = factor(dims$time),
-        species = fg_group$LongName,
-        year = atlantis_time_to_years(dims$time, start_year),
-        month = atlantis_time_to_months(dims$time),
-        age = dims$age,
-        # Maturity stage is mature iff ageClass greater than FLAG_AGE_MAT
-        maturity_stage = ifelse(dims$age > fg_group$FLAG_AGE_MAT * age_class_size, 5, 1),
-        weight = weight_grams,  # TODO: Units?
-        length = (weight_grams / fg_group$FLAG_LI_A) ^ (1 / fg_group$FLAG_LI_B),
-        count = as.numeric(fg_Nums),
-        stringsAsFactors = TRUE)
-}
-
 atlantis_fisheries_catch <- function(adir,
         catch_file,
         area_data,
@@ -203,56 +164,68 @@ atlantis_fisheries_catch <- function(adir,
         stringsAsFactors = TRUE)
 }
 
-atlantis_consumption <- function (adir,
+atlantis_fg_tracer <- function (adir,
         area_data,
+        fg_group,
+        consumption = FALSE,
         nc_file = first_file(adir, "*.nc"),
         prod_file = first_file(adir, "*PROD.nc"),
-        fg_group,
-        ingestion_period = c(),
-        start_year = 1948) {
+        start_year = attr(adir, 'start_year')) {
+    # Read in both counts and mgN of all cohorts in group
     nc_out <- ncdf4::nc_open(nc_file)
-
     fg_Nums <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums')
+    fg_StructN <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'StructN')
     dims <- expand.grid(
         depth = nc_out$dim$z$vals,
         area = as.character(area_data$name),
         time = nc_out$dim$t$vals,
         cohort = seq_len(as.character(fg_group$NumCohorts)),
         stringsAsFactors = FALSE)
-    df_nums <- data.frame(
+    weight_grams <- mgn_to_grams(fg_StructN)  # Per-individual, so we can treat it as mean weight
+    df_out <- data.frame(
         depth = dims$depth,
         area = dims$area,
         year = atlantis_time_to_years(dims$time, start_year),
         month = atlantis_time_to_months(dims$time),
         group = as.character(fg_group$GroupCode),
         cohort = dims$cohort,
+        weight = weight_grams,
+        length = (weight_grams / fg_group$FLAG_LI_A) ^ (1 / fg_group$FLAG_LI_B),
         count = as.numeric(fg_Nums),
         stringsAsFactors = TRUE)
-    df_nums <- aggregate(count ~ area + year + month + group + cohort, df_nums, sum)
 
-    nc_prod <- ncdf4::nc_open(prod_file)
-    fg_Eat <- fetch_nc_variables(nc_prod, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Eat')
-    dims <- expand.grid(
-        area = as.character(area_data$name),
-        time = nc_prod$dim$t$vals,
-        cohort = seq_len(fg_group$NumCohorts),
-        stringsAsFactors = FALSE)
-    df_eat <- data.frame(
-        area = dims$area,
-        year = atlantis_time_to_years(dims$time, start_year),
-        month = atlantis_time_to_months(dims$time),
-        group = as.character(fg_group$GroupCode),
-        cohort = dims$cohort,
-        consumption = as.numeric(fg_Eat),
-        stringsAsFactors = TRUE)
+    if (consumption) {
+        # Drop depth from data.frame
+        df_out <- aggregate(cbind(weight, length, count) ~ area + year + month + group + cohort, df_out, sum)
 
-    df_out <- merge(df_nums, df_eat, by = c('area', 'year', 'month', 'group', 'cohort'))
-    # Consumption is mgN/day for the whole cohort. Divide to get rates for individual
-    df_out$ind_consumption <- df_out$consumption / df_out$count
+        # Read in consumption data
+        nc_prod <- ncdf4::nc_open(prod_file)
+        fg_Eat <- fetch_nc_variables(nc_prod, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Eat')
+        dims <- expand.grid(
+            area = as.character(area_data$name),
+            time = nc_prod$dim$t$vals,
+            cohort = seq_len(fg_group$NumCohorts),
+            stringsAsFactors = FALSE)
+        df_eat <- data.frame(
+            area = dims$area,
+            year = atlantis_time_to_years(dims$time, start_year),
+            month = atlantis_time_to_months(dims$time),
+            group = as.character(fg_group$GroupCode),
+            cohort = dims$cohort,
+            consumption = as.numeric(fg_Eat),
+            stringsAsFactors = TRUE)
+
+        df_out <- merge(df_out, df_eat, by = c('area', 'year', 'month', 'group', 'cohort'))
+        # Consumption is mgN/day for the whole cohort. Divide to get rates for individual
+        df_out$ind_consumption <- df_out$consumption / df_out$count
+    }
 
     # Add age to data
     age_class_size <- as.numeric(as.character(fg_group$NumAgeClassSize))
     df_out$age <- df_out$cohort * age_class_size + age_class_size / 2
+
+    # Maturity stage is mature iff cohort greater than FLAG_AGE_MAT
+    df_out$maturity_stage = ifelse(df_out$cohort > fg_group$FLAG_AGE_MAT, 5, 1)
 
     return(df_out)
 }
