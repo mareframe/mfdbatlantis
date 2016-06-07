@@ -5,6 +5,7 @@ mdb <- mfdb('Atlantis-LVic')
 
 # Find all the files in this directory
 lv_dir <- 'atlantis-L_Vic-OutputFolderTest2'  # TODO: Shouldn't be in the demo either
+attr(lv_dir, 'start_year') <- 1948
 
 lv_run_options <- atlantis_run_options(lv_dir, 'LV_run.xml')
 

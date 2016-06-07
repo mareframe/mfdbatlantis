@@ -6,6 +6,7 @@ mdb <- mfdb('Atlantis-Iceland')
 
 # Find all the files in this directory
 ice_dir <- 'atlantis-Iceland-NoFishing20150909-1'  # TODO: Shouldn't be in the demo either
+attr(ice_dir, 'start_year') <- 1948
 
 ice_run_options <- atlantis_run_options(ice_dir, 'RunNoFish.xml')
 

@@ -115,7 +115,7 @@ atlantis_tracer <- function (adir,
         nc_file = Sys.glob(file.path(adir, "output*.nc")),
         area_data,
         tracer_name = 'Temp',
-        start_year = 1948) {
+        start_year = attr(adir, 'start_year')) {
     nc_out <- ncdf4::nc_open(file.path(adir, nc_file))
 
     tracer <- ncdf4::ncvar_get(nc_out, tracer_name)
@@ -136,10 +136,10 @@ atlantis_tracer <- function (adir,
 }
 
 atlantis_fg_count <- function (adir,
-        nc_file = Sys.glob(file.path(adir, "output*.nc")),
         area_data,
         fg_group,
-        start_year = 1948) {
+        nc_file = first_file(adir, "*.nc"),
+        start_year = attr(adir, 'start_year')) {
     nc_out <- ncdf4::nc_open(file.path(adir, nc_file))
 
     # Read in all StructN and Nums data for the functional group
@@ -179,7 +179,7 @@ atlantis_fisheries_catch <- function(adir,
         area_data,
         fishery,
         species,
-        start_year = 1948) {
+        start_year = attr(adir, 'start_year')) {
     nc_out <- ncdf4::nc_open(file.path(adir, catch_file))
 
     catch_tonnes <- fetch_nc_variables(nc_out, species, 'Catch', paste0('FC', fishery$Index))
@@ -262,7 +262,7 @@ atlantis_stomach_content <- function (adir,
         predator_map,
         prey_map,
         diet_file = first_file(adir, "*DietCheck.txt"),
-        start_year = 1948) {
+        start_year = attr(adir, 'start_year')) {
     repeat_by_col <- function(df, col_name) {
         df[rep(seq_len(nrow(df)), df[, col_name]), names(df) != col_name]
     }
