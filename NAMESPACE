@@ -1,9 +1,12 @@
+# R/atlantis_consumption.R
+export(atlantis_stomach_content)
+# R/atlantis_fisheries.R
+export(atlantis_fisheries)
+export(atlantis_fisheries_catch)
 # R/atlantis_functions.R
 export(atlantis_read_areas)
 export(atlantis_functional_groups)
-export(atlantis_fisheries)
 export(atlantis_run_options)
+# R/atlantis_tracer.R
 export(atlantis_tracer)
 export(atlantis_fg_tracer)
-export(atlantis_fisheries_catch)
-export(atlantis_stomach_content)
