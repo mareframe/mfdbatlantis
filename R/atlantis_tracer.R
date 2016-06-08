@@ -1,11 +1,10 @@
-atlantis_tracer <- function (adir,
+atlantis_temperature <- function (adir,
         area_data,
-        tracer_name,
         nc_file = first_file(adir, "*.nc"),
         start_year = attr(adir, 'start_year')) {
     nc_out <- ncdf4::nc_open(nc_file)
 
-    tracer <- ncdf4::ncvar_get(nc_out, tracer_name)
+    tracer <- ncdf4::ncvar_get(nc_out, 'Temp')
     dims <- expand.grid(
         depth = nc_out$dim$z$vals,
         areacell = as.character(area_data$name),
@@ -18,7 +17,7 @@ atlantis_tracer <- function (adir,
         time = factor(dims$time),
         year = atlantis_time_to_years(dims$time, start_year),
         month = atlantis_time_to_months(dims$time),
-        value = as.numeric(tracer),
+        temperature = as.numeric(tracer),
         stringsAsFactors = TRUE)
 }
 

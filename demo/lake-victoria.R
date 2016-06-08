@@ -12,9 +12,8 @@ lv_run_options <- atlantis_run_options(lv_dir)
 
 # Read in areas / surface temperatures, insert into mfdb
 lv_area_data <- atlantis_read_areas(lv_dir)
-lv_temp <- atlantis_tracer(lv_dir, lv_area_data, 'Temp')
+lv_temp <- atlantis_temperature(lv_dir, lv_area_data)
 mfdb_import_area(mdb, lv_area_data)
-lv_temp$temperature <- lv_temp$value
 mfdb_import_temperature(mdb, lv_temp[lv_temp$depth == 1,])
 
 # Read in all functional groups, assign MFDB shortcodes where possible

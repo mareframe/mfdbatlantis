@@ -8,5 +8,5 @@ export(atlantis_read_areas)
 export(atlantis_functional_groups)
 export(atlantis_run_options)
 # R/atlantis_tracer.R
-export(atlantis_tracer)
+export(atlantis_temperature)
 export(atlantis_fg_tracer)
