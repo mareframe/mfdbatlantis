@@ -1,8 +1,7 @@
 atlantis_temperature <- function (adir,
         area_data,
-        nc_file = first_file(adir, "*.nc"),
         start_year = attr(adir, 'start_year')) {
-    nc_out <- ncdf4::nc_open(nc_file)
+    nc_out <- ncdf4::nc_open(attr(adir, 'nc_out'))
 
     tracer <- ncdf4::ncvar_get(nc_out, 'Temp')
     dims <- expand.grid(
@@ -25,11 +24,9 @@ atlantis_fg_tracer <- function (adir,
         area_data,
         fg_group,
         consumption = FALSE,
-        nc_file = first_file(adir, "*.nc"),
-        prod_file = first_file(adir, "*PROD.nc"),
         start_year = attr(adir, 'start_year')) {
     # Read in both counts and mgN of all cohorts in group
-    nc_out <- ncdf4::nc_open(nc_file)
+    nc_out <- ncdf4::nc_open(attr(adir, 'nc_out'))
     fg_Nums <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums')
     fg_StructN <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'StructN')
     dims <- expand.grid(
@@ -56,7 +53,7 @@ atlantis_fg_tracer <- function (adir,
         df_out <- aggregate(cbind(weight, length, count) ~ area + year + month + group + cohort, df_out, sum)
 
         # Read in consumption data
-        nc_prod <- ncdf4::nc_open(prod_file)
+        nc_prod <- ncdf4::nc_open(attr(adir, 'nc_prod'))
         fg_Eat <- fetch_nc_variables(nc_prod, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Eat')
         dims <- expand.grid(
             area = as.character(area_data$name),

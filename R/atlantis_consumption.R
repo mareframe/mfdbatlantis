@@ -2,7 +2,6 @@ atlantis_stomach_content <- function (adir,
         consumption,
         predator_map,
         prey_map,
-        diet_file = first_file(adir, "*DietCheck.txt"),
         start_year = attr(adir, 'start_year')) {
     repeat_by_col <- function(df, col_name) {
         df[rep(seq_len(nrow(df)), df[, col_name]), names(df) != col_name]
@@ -15,7 +14,7 @@ atlantis_stomach_content <- function (adir,
     consumption <- repeat_by_col(consumption, 'count')
     consumption$stomach_name <- seq_len(nrow(consumption))
 
-    diet <- read.table(diet_file, header = TRUE, stringsAsFactors = FALSE)
+    diet <- read.table(attr(adir, 'txt_diet'), header = TRUE, stringsAsFactors = FALSE)
     diet$Year <- diet$Time %/% 365 + start_year
     diet$Month <- (diet$Time %% 365) %/% (365 / 12) + 1
 

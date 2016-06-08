@@ -1,6 +1,5 @@
-atlantis_fisheries <- function (adir,
-        fisheries_file = first_file(adir, '*Fisheries*.xml')) {
-    fisheries_doc <- XML::xmlParse(fisheries_file)
+atlantis_fisheries <- function (adir) {
+    fisheries_doc <- XML::xmlParse(attr(adir, 'xml_fisheries'))
     fisheries_data <- fetch_xml_attributes(fisheries_doc, 'Fishery', c('Code', 'Index', 'Name', 'IsRec', 'NumSubFleets'))
     fisheries_data
 }
@@ -8,10 +7,9 @@ atlantis_fisheries <- function (adir,
 atlantis_fisheries_catch <- function(adir,
         area_data,
         fishery,
-        catch_file = first_file(adir, "*CATCH.nc"),
         start_year = attr(adir, 'start_year')) {
     # Read in all (functional_group)_Catch_(fishery)
-    nc_out <- ncdf4::nc_open(catch_file)
+    nc_out <- ncdf4::nc_open(attr(adir, 'nc_catch'))
     fishery_vars <- list_nc_variables(nc_out, paste0('Catch_FC', fishery$Index, '$'))
     catch_tonnes <- fetch_nc_variables(nc_out, fishery_vars)
     dims <- expand.grid(

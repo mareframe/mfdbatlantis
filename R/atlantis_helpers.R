@@ -1,11 +1,3 @@
-# Select the first file matching the glob in adir
-first_file <- function (adir, glob) {
-    files <- sort(Sys.glob(file.path(adir, glob)))
-    files <- files[order(nchar(files), files)]
-    if (length(files) == 0) stop("No files found for ", c(adir, glob))
-    return(files[[1]])
-}
-
 # Given an XML document, pull out group_attributes from attribute group_name,
 # return as data.frame
 fetch_xml_attributes <- function (xml_doc, group_name, group_attributes, stringsAsFactors = default.stringsAsFactors()) {

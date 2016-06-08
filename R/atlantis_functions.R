@@ -1,7 +1,5 @@
 # Read required details in from bgm file
-atlantis_read_areas <- function (adir, bgm_file = first_file(adir, '*.bgm')) {
-    if (length(bgm_file) != 1) stop("One bgm file required, not ", length(bgm_file))
-
+atlantis_read_areas <- function (adir) {
     get_box_attribute <- function (bgm_lines, field_name, new_name = field_name) {
         # Extract lines we are interested and break up into key/val
         rv <- grep(paste0("^[A-Za-z0-9]+\\.", field_name), bgm_lines, value = TRUE)
@@ -15,7 +13,7 @@ atlantis_read_areas <- function (adir, bgm_file = first_file(adir, '*.bgm')) {
     }
 
     # Extract parts of file we are interested in
-    bgm_lines <- readLines(bgm_file)
+    bgm_lines <- readLines(attr(adir, 'bgm_area'))
     area_data <- merge(
         get_box_attribute(bgm_lines, "label", "name"),
         get_box_attribute(bgm_lines, "area", "size"),
@@ -25,15 +23,13 @@ atlantis_read_areas <- function (adir, bgm_file = first_file(adir, '*.bgm')) {
     return(area_data)
 }
 
-atlantis_functional_groups <- function (adir,
-        fg_file = first_file(adir, '*Groups*.xml'),
-        bio_file = first_file(adir, '*[Bb]io*.xml')) {
-    fg_doc <- XML::xmlParse(fg_file)
+atlantis_functional_groups <- function (adir) {
+    fg_doc <- XML::xmlParse(attr(adir, 'xml_fg'))
     fg_data <- fetch_xml_attributes(fg_doc, 'FunctionalGroup', c('GroupCode', 'Name', 'LongName', 'IsPredator', 'IsTurnedOn', 'NumCohorts', 'NumStages', 'NumAgeClassSize'), stringsAsFactors = FALSE)
 
     # Pull out useful flags from biology file and combine
     xmlAllAttrs <- Vectorize(XML::xmlAttrs)
-    bio_doc <- XML::xmlParse(bio_file)
+    bio_doc <- XML::xmlParse(attr(adir, 'xml_bio'))
     for (flag in c('FLAG_AGE_MAT', 'FLAG_LI_A', 'FLAG_LI_B')) {
         bio_flags <- xmlAllAttrs(XML::getNodeSet(bio_doc, paste0("//Attribute[@AttributeName='", flag, "']/GroupValue")))
         flag_table <- data.frame(
@@ -47,8 +43,8 @@ atlantis_functional_groups <- function (adir,
     return(fg_data)
 }
 
-atlantis_run_options <- function (adir, opt_file = first_file(adir, '*[rR]un*.xml')) {
-    opt_doc <- XML::xmlParse(opt_file)
+atlantis_run_options <- function (adir) {
+    opt_doc <- XML::xmlParse(attr(adir, 'xml_opt'))
     opt_data <- fetch_xml_attributes(opt_doc, "ScenarioOptions", c("dt"))
 
     return(opt_data)
