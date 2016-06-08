@@ -52,3 +52,8 @@ atlantis_time_to_months <- function (atl_time, start_year) {
     months <- round(as.numeric(atl_time) / atl_secs_to_month)
     return(months %% 12 + 1)
 }
+# day vector from dims$time
+atlantis_time_to_days <- function (atl_time, start_year) {
+    days <- atl_time / (60 * 60 * 24)
+    return(days %% (365 / 12) + 1)
+}
