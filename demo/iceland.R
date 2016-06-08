@@ -4,9 +4,7 @@ library(utils)
 
 mdb <- mfdb('Atlantis-Iceland')
 
-# Find all the files in this directory
-is_dir <- 'atlantis-Iceland-2016-05-24/'  # TODO: Shouldn't be in the demo either
-attr(is_dir, 'start_year') <- 1948
+is_dir <- atlantis_directory('atlantis-Iceland-2016-05-24')
 
 is_run_options <- atlantis_run_options(is_dir)
 

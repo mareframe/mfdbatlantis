@@ -4,9 +4,7 @@ library(utils)
 
 mdb <- mfdb('Atlantis-LVic')
 
-# Find all the files in this directory
-lv_dir <- 'atlantis-L_Vic-2016-05-05'  # TODO: Shouldn't be in the demo either
-attr(lv_dir, 'start_year') <- 1948
+lv_dir <- atlantis_directory('atlantis-L_Vic-2016-05-05')
 
 lv_run_options <- atlantis_run_options(lv_dir)
 

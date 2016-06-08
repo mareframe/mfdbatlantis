@@ -1,5 +1,7 @@
 # R/atlantis_consumption.R
 export(atlantis_stomach_content)
+# R/atlantis_directory.R
+export(atlantis_directory)
 # R/atlantis_fisheries.R
 export(atlantis_fisheries)
 export(atlantis_fisheries_catch)
