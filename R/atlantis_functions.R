@@ -1,13 +1,14 @@
 # Select the first file matching the glob in adir
-first_file <- function (...) {
-    files <- sort(Sys.glob(file.path(...)))
-    if (length(files) == 0) stop("No files found for ", c(...))
+first_file <- function (adir, glob) {
+    files <- sort(Sys.glob(file.path(adir, glob)))
+    files <- files[order(nchar(files), files)]
+    if (length(files) == 0) stop("No files found for ", c(adir, glob))
     return(files[[1]])
 }
 
 # Given an XML document, pull out group_attributes from attribute group_name,
 # return as data.frame
-fetch_xml_attributes <- function (xml_doc, group_name, group_attributes) {
+fetch_xml_attributes <- function (xml_doc, group_name, group_attributes, stringsAsFactors = default.stringsAsFactors()) {
     xmlAllAttrs <- Vectorize(XML::xmlAttrs)
     attr_xpath <- paste0(
         "./Attribute[contains('|",
@@ -19,7 +20,7 @@ fetch_xml_attributes <- function (xml_doc, group_name, group_attributes) {
         # Pull out all attributes we are interested in from the group
         rv <- xmlAllAttrs(XML::getNodeSet(n, attr_xpath))
         structure(rv["AttributeValue",], names = rv["AttributeName",])
-    }, rep("", length(group_attributes)))))
+    }, rep("", length(group_attributes)))), stringsAsFactors = stringsAsFactors)
 }
 
 # Given an ncdf4 file, and any number of vectors (e.g. c('Birds1', Birds2), 'Nums'),
@@ -28,6 +29,15 @@ fetch_nc_variables <- function(nc_out, ...) {
     ncvar_get_all <- Vectorize(ncdf4::ncvar_get, vectorize.args = 'varid', SIMPLIFY = "array")
     nc_variables <- apply(expand.grid(..., stringsAsFactors = FALSE), 1, function (x) paste(x, collapse="_"))
     ncvar_get_all(nc_out, nc_variables)
+}
+
+# List all variable names available, optionally filtering by regex
+list_nc_variables <- function(nc_out, filter = "") {
+    out <- lapply(nc_out$var, function (v) v$name)
+    if (nzchar(filter)) {
+        out <- grep(filter, out, value = TRUE)
+    }
+    return(out)
 }
 
 # Convert MgN to grams
@@ -52,7 +62,7 @@ atlantis_time_to_months <- function (atl_time, start_year) {
 }
 
 # Read required details in from bgm file
-atlantis_read_areas <- function (adir, bgm_file) {
+atlantis_read_areas <- function (adir, bgm_file = first_file(adir, '*.bgm')) {
     if (length(bgm_file) != 1) stop("One bgm file required, not ", length(bgm_file))
 
     get_box_attribute <- function (bgm_lines, field_name, new_name = field_name) {
@@ -68,7 +78,7 @@ atlantis_read_areas <- function (adir, bgm_file) {
     }
 
     # Extract parts of file we are interested in
-    bgm_lines <- readLines(file.path(adir, bgm_file))
+    bgm_lines <- readLines(bgm_file)
     area_data <- merge(
         get_box_attribute(bgm_lines, "label", "name"),
         get_box_attribute(bgm_lines, "area", "size"),
@@ -78,13 +88,15 @@ atlantis_read_areas <- function (adir, bgm_file) {
     return(area_data)
 }
 
-atlantis_functional_groups <- function (adir, fg_file, bio_file) {
-    fg_doc <- XML::xmlParse(file.path(adir, fg_file))
-    fg_data <- fetch_xml_attributes(fg_doc, 'FunctionalGroup', c('GroupCode', 'Name', 'LongName', 'IsPredator', 'IsTurnedOn', 'NumCohorts', 'NumStages', 'NumAgeClassSize'))
+atlantis_functional_groups <- function (adir,
+        fg_file = first_file(adir, '*Groups*.xml'),
+        bio_file = first_file(adir, '*[Bb]io*.xml')) {
+    fg_doc <- XML::xmlParse(fg_file)
+    fg_data <- fetch_xml_attributes(fg_doc, 'FunctionalGroup', c('GroupCode', 'Name', 'LongName', 'IsPredator', 'IsTurnedOn', 'NumCohorts', 'NumStages', 'NumAgeClassSize'), stringsAsFactors = FALSE)
 
     # Pull out useful flags from biology file and combine
     xmlAllAttrs <- Vectorize(XML::xmlAttrs)
-    bio_doc <- XML::xmlParse(file.path(adir, bio_file))
+    bio_doc <- XML::xmlParse(bio_file)
     for (flag in c('FLAG_AGE_MAT', 'FLAG_LI_A', 'FLAG_LI_B')) {
         bio_flags <- xmlAllAttrs(XML::getNodeSet(bio_doc, paste0("//Attribute[@AttributeName='", flag, "']/GroupValue")))
         flag_table <- data.frame(
@@ -98,25 +110,19 @@ atlantis_functional_groups <- function (adir, fg_file, bio_file) {
     return(fg_data)
 }
 
-atlantis_fisheries <- function (adir, fisheries_file) {
-    fisheries_doc <- XML::xmlParse(file.path(adir, fisheries_file))
-    fisheries_data <- fetch_xml_attributes(fisheries_doc, 'Fishery', c('Code', 'Index', 'Name', 'IsRec', 'NumSubFleets'))
-    fisheries_data
-}
-
-atlantis_run_options <- function (adir, opt_file) {
-    opt_doc <- XML::xmlParse(file.path(adir, opt_file))
+atlantis_run_options <- function (adir, opt_file = first_file(adir, '*[rR]un*.xml')) {
+    opt_doc <- XML::xmlParse(opt_file)
     opt_data <- fetch_xml_attributes(opt_doc, "ScenarioOptions", c("dt"))
 
     return(opt_data)
 }
 
 atlantis_tracer <- function (adir,
-        nc_file = Sys.glob(file.path(adir, "output*.nc")),
         area_data,
-        tracer_name = 'Temp',
+        tracer_name,
+        nc_file = first_file(adir, "*.nc"),
         start_year = attr(adir, 'start_year')) {
-    nc_out <- ncdf4::nc_open(file.path(adir, nc_file))
+    nc_out <- ncdf4::nc_open(nc_file)
 
     tracer <- ncdf4::ncvar_get(nc_out, tracer_name)
     dims <- expand.grid(
@@ -132,35 +138,6 @@ atlantis_tracer <- function (adir,
         year = atlantis_time_to_years(dims$time, start_year),
         month = atlantis_time_to_months(dims$time),
         value = as.numeric(tracer),
-        stringsAsFactors = TRUE)
-}
-
-atlantis_fisheries_catch <- function(adir,
-        catch_file,
-        area_data,
-        fishery,
-        species,
-        start_year = attr(adir, 'start_year')) {
-    nc_out <- ncdf4::nc_open(file.path(adir, catch_file))
-
-    catch_tonnes <- fetch_nc_variables(nc_out, species, 'Catch', paste0('FC', fishery$Index))
-
-    # Populate initial data frame that contains the combinatorial explosions of the axes
-    dims <- expand.grid(
-        area = as.character(area_data$name),
-        time = nc_out$dim$t$vals,
-        species = species,
-        stringsAsFactors = TRUE)
-
-    # Combine with catch data
-    data.frame(
-        area = dims$area,
-        time = dims$time,
-        year = atlantis_time_to_years(dims$time, start_year),
-        month = atlantis_time_to_months(dims$time),
-        fishery = fishery$Code,
-        species = dims$species,
-        weight_total = as.numeric(catch_tonnes),
         stringsAsFactors = TRUE)
 }
 
@@ -284,4 +261,39 @@ atlantis_stomach_content <- function (adir,
     }))
 
     list(predator_data = predator_data, prey_data = prey_data)
+}
+
+atlantis_fisheries <- function (adir,
+        fisheries_file = first_file(adir, '*Fisheries*.xml')) {
+    fisheries_doc <- XML::xmlParse(fisheries_file)
+    fisheries_data <- fetch_xml_attributes(fisheries_doc, 'Fishery', c('Code', 'Index', 'Name', 'IsRec', 'NumSubFleets'))
+    fisheries_data
+}
+
+atlantis_fisheries_catch <- function(adir,
+        area_data,
+        fishery,
+        catch_file = first_file(adir, "*CATCH.nc"),
+        start_year = attr(adir, 'start_year')) {
+    # Read in all (functional_group)_Catch_(fishery)
+    nc_out <- ncdf4::nc_open(catch_file)
+    fishery_vars <- list_nc_variables(nc_out, paste0('Catch_FC', fishery$Index, '$'))
+    catch_tonnes <- fetch_nc_variables(nc_out, fishery_vars)
+    dims <- expand.grid(
+        area = as.character(area_data$name),
+        time = nc_out$dim$t$vals,
+        functional_group = sub('_.*', '', fishery_vars),
+        stringsAsFactors = TRUE)
+    if (nrow(dims) == 0) return(data.frame())
+
+    # Combine with catch data
+    data.frame(
+        area = dims$area,
+        time = dims$time,
+        year = atlantis_time_to_years(dims$time, start_year),
+        month = atlantis_time_to_months(dims$time),
+        fishery = fishery$Code,
+        functional_group = dims$functional_group,
+        weight_total = as.numeric(catch_tonnes),
+        stringsAsFactors = TRUE)
 }
