@@ -30,7 +30,6 @@ for (fgName in c("Cod", "Haddock")) {
     is_fg_count$areacell <- is_fg_count$area
     # TODO: More selectivity (Look with Bjarki at Rgadget mean length simulat)
     # TODO: Want a length selectivity curve for the gear, areas that you're interested in.
-    # TODO: Apply this also to consumption below, maybe combine the two?
     mfdb_import_survey(mdb, is_fg_count, data_source = paste0('atlantisTracer_', fgName))
 }
 
@@ -44,13 +43,9 @@ for (fgName in c("Cod")) {
         fg_group = fg_group,
         consumption = TRUE)
 
-    # Reduce area down to a pretend survey time/area
-    consumption <- consumption[consumption$year == 1950 & consumption$area %in% c("Box20", "Box21", "Box22"),]
-    # Assume we only catch 0.0001% of possible available
-    consumption$count <- round(consumption$count * 0.000001)
-    # TODO:
-    # 2 weeks in spring / autum
-    # Sample every nth fish (that the survey takes?)
+    # Only survey the first quarter, and in 3 boxes
+    consumption <- consumption[consumption$month == 1 & consumption$area %in% c("Box20", "Box21", "Box22"),]
+    # TODO: Sample every nth fish (that the survey takes?)
     #   => Don't bother with this, only generating proportions anyway
 
     # Convert this into the 2 data.frames import_stomach requires
