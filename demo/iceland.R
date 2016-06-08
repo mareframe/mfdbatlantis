@@ -22,10 +22,10 @@ is_functional_groups$MfdbCode <- vapply(
 
 # Ingest survey data
 for (fgName in c("Cod", "Haddock")) {
-    fg <- is_functional_groups[c(is_functional_groups$Name == fgName),]
+    fg_group <- is_functional_groups[c(is_functional_groups$Name == fgName),]
     cat("Importing functional group", fg$Name, "\n")
 
-    is_fg_count <- atlantis_fg_tracer(is_dir, is_area_data, fg)
+    is_fg_count <- atlantis_fg_tracer(is_dir, is_area_data, fg_group)
     is_fg_count$species <- fg$MfdbCode
     is_fg_count$areacell <- is_fg_count$area
     # TODO: More selectivity (Look with Bjarki at Rgadget mean length simulat)
@@ -35,13 +35,13 @@ for (fgName in c("Cod", "Haddock")) {
 }
 
 for (fgName in c("Cod")) {
-    fg <- is_functional_groups[c(is_functional_groups$Name == fgName),]
+    fg_group <- is_functional_groups[c(is_functional_groups$Name == fgName),]
 
     # Fetch consumption and tracer indexes for functional group
     consumption <- atlantis_fg_tracer(
         is_dir,
         is_area_data,
-        fg_group = fg,
+        fg_group = fg_group,
         consumption = TRUE)
 
     # Reduce area down to a pretend survey time/area

@@ -22,10 +22,10 @@ lv_functional_groups$MfdbCode <- vapply(
 
 # Ingest survey data
 for (fgName in c()) {  # TODO: Add some functional groups
-    fg <- lv_functional_groups[c(lv_functional_groups$Name == fgName),]
+    fg_group <- lv_functional_groups[c(lv_functional_groups$Name == fgName),]
     cat("Importing functional group", fg$Name, "\n")
 
-    lv_fg_count <- atlantis_fg_tracer(lv_dir, lv_area_data, fg)
+    lv_fg_count <- atlantis_fg_tracer(lv_dir, lv_area_data, fg_group)
     lv_fg_count$species <- fg$MfdbCode
     lv_fg_count$areacell <- lv_fg_count$area
     mfdb_import_survey(mdb, lv_fg_count, data_source = paste0('atlantisTracer_', fgName))
