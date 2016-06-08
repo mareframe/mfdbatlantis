@@ -27,25 +27,26 @@ atlantis_fg_tracer <- function (adir,
         start_year = attr(adir, 'start_year')) {
     # Read in both counts and mgN of all cohorts in group
     nc_out <- ncdf4::nc_open(attr(adir, 'nc_out'))
-    fg_Nums <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums')
-    fg_StructN <- fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'StructN')
+    fg_Nums <- as.numeric(fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums'))
+    fg_StructN <- as.numeric(fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'StructN'))
     dims <- expand.grid(
         depth = nc_out$dim$z$vals,
         area = as.character(area_data$name),
         time = nc_out$dim$t$vals,
         cohort = seq_len(as.character(fg_group$NumCohorts)),
         stringsAsFactors = FALSE)
-    weight_grams <- mgn_to_grams(fg_StructN)  # Per-individual, so we can treat it as mean weight
+    weight_grams <- mgn_to_grams(ifelse(fg_Nums > 0, fg_StructN, NA))  # Per-individual, so we can treat it as mean weight
     df_out <- data.frame(
         depth = dims$depth,
         area = dims$area,
         year = atlantis_time_to_years(dims$time, start_year),
         month = atlantis_time_to_months(dims$time),
+        day = atlantis_time_to_day(dims$time),
         group = as.character(fg_group$GroupCode),
         cohort = dims$cohort,
         weight = weight_grams,
         length = (weight_grams / fg_group$FLAG_LI_A) ^ (1 / fg_group$FLAG_LI_B),
-        count = as.numeric(fg_Nums),
+        count = fg_Nums,
         stringsAsFactors = TRUE)
 
     if (consumption) {
