@@ -15,8 +15,8 @@ atlantis_stomach_content <- function (adir,
     consumption$stomach_name <- seq_len(nrow(consumption))
 
     diet <- read.table(attr(adir, 'txt_diet'), header = TRUE, stringsAsFactors = FALSE)
-    diet$Year <- diet$Time %/% 365 + start_year
-    diet$Month <- (diet$Time %% 365) %/% (365 / 12) + 1
+    diet$Year <- diet$Time %/% atl_year_days + start_year
+    diet$Month <- (diet$Time %% atl_year_days) %/% (365 / 12) + 1  # NB: Months aren't 30.333 here(?)
 
     predator_data <- data.frame(
         year = consumption$year,

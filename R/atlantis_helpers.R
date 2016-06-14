@@ -37,23 +37,26 @@ mgn_to_grams <- function (mgn) {
     3.65 * as.numeric(mgn) * 5.7 * 20 / 1000
 }
 
-# NB: Atlantis treats years as 365 days, no execeptions
-atl_secs_to_month <- 60 * 60 * 24 * (365 / 12)
+# Atlantis time units
+atl_day_secs <- 60 * 60 * 24  # Seconds-in-day normal
+atl_year_days <- 365  # NB: Atlantis years are 365 days, no leap years
+atl_month_days <- 30 + 1/3  # NB: Atlantis months seem to be equally sized, don't quite add up to 365
+atl_month_secs <- atl_month_days * atl_day_secs
 
-# Year vector from dims$time
-atlantis_time_to_years <- function (atl_time, start_year) {
+# Convert vector of atl_time seconds to year
+atlantis_time_to_years <- function (atl_time) {
     # NB: The 1year-in-sec steps in the ncout files aren't very smooth due to machine innacuracy,
     # so force to nearest month first, which works for a few years.
-    months <- round(as.numeric(atl_time) / atl_secs_to_month)
-    return(months %/% 12 + start_year)
+    months <- round(as.numeric(atl_time) / atl_month_secs)
+    return(months %/% 12)
 }
 # month vector from dims$time
-atlantis_time_to_months <- function (atl_time, start_year) {
-    months <- round(as.numeric(atl_time) / atl_secs_to_month)
+atlantis_time_to_months <- function (atl_time) {
+    months <- round(as.numeric(atl_time) / atl_month_secs)
     return(months %% 12 + 1)
 }
 # day vector from dims$time
-atlantis_time_to_days <- function (atl_time, start_year) {
-    days <- atl_time / (60 * 60 * 24)
-    return(days %% (365 / 12) + 1)
+atlantis_time_to_days <- function (atl_time) {
+    days <- atl_time / atl_day_secs
+    return(days %% atl_month_days + 1)
 }

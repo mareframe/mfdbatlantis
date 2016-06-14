@@ -23,7 +23,7 @@ atlantis_fisheries_catch <- function(adir,
     data.frame(
         area = dims$area,
         time = dims$time,
-        year = atlantis_time_to_years(dims$time, start_year),
+        year = atlantis_time_to_years(dims$time) + start_year,
         month = atlantis_time_to_months(dims$time),
         fishery = fishery$Code,
         functional_group = dims$functional_group,

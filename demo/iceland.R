@@ -45,6 +45,8 @@ for (fgName in c("Cod")) {
 
     # Only survey the first quarter, and in 3 boxes
     consumption <- consumption[consumption$month == 1 & consumption$area %in% c("Box20", "Box21", "Box22"),]
+    # Assume we only catch 0.0001% of possible available
+    consumption$count <- round(consumption$count * 0.000001)
     # TODO: Sample every nth fish (that the survey takes?)
     #   => Don't bother with this, only generating proportions anyway
 
