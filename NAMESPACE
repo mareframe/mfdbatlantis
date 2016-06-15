@@ -12,3 +12,5 @@ export(atlantis_run_options)
 # R/atlantis_tracer.R
 export(atlantis_temperature)
 export(atlantis_fg_tracer)
+export(atlantis_tracer_add_lengthgroups)
+export(atlantis_tracer_survey_select)

@@ -86,3 +86,75 @@ atlantis_fg_tracer <- function (adir,
 
     return(df_out)
 }
+
+# Expand length (mean) to buckets of length_groups
+atlantis_tracer_add_lengthgroups <- function(
+        tracer_data,  # Output of fg_tracer
+        length_group,  # vector of c(min, min, min, ..., max)
+        sigma_per_cohort  # length std.dev per age in functional group
+        ) {
+
+        if (length(length_group) < 2) {
+            stop("Length group should have at least 2 members")
+        }
+
+        # No point considering records with no fish
+        tracer_data <- tracer_data[tracer_data$count > 0,]
+
+        # Add std.deviations to tracer data
+        tracer_data$length_stddev <- sigma_per_cohort[tracer_data$cohort]
+
+        # Similar to rgadget:::distr (R/function.R, line 99)
+        lengrp_lower <- length_group[-length(length_group)]  # Upper bounds for length groups
+        lengrp_upper <- length_group[-1]  # Lower bounds for length groups
+        len_dist <- function (len) {
+            pnorm(
+                rep(len, each = nrow(tracer_data)),
+                tracer_data$length,  # i.e. mean length
+                tracer_data$length_stddev)
+        }
+        length_groups <- as.data.frame(matrix(
+            rep(tracer_data$count, times = length(lengrp_upper)) * (len_dist(lengrp_upper) - len_dist(lengrp_lower)),
+            dimnames = list(
+                c(),
+                paste("length", lengrp_lower, lengrp_upper, sep = "_")),
+            ncol = length(lengrp_lower)))
+
+        return(cbind(tracer_data, length_groups))
+}
+
+atlantis_tracer_survey_select <- function(
+        tracer_data,  # Tracer data with length_(x)_(y) columns
+        length_group,  # vector of c(min, min, min, ..., max) per functional group
+        survey_suitability,  # Suitability vector, one entry per length group
+        survey_sigma  # Error rate
+        ) {
+    lengrp_lower <- length_group[-length(length_group)]  # Upper bounds for length groups
+    lengrp_upper <- length_group[-1]  # Lower bounds for length groups
+    err_variance <- survey_sigma^2
+
+    # Strip columns we will replace from tracer_data
+    base_names <- grep(
+        "^length|^weight|^count",
+        names(tracer_data),
+        value = TRUE, invert = TRUE)
+    base_data <- tracer_data[, base_names, drop = FALSE]
+
+    # For each length group, extract data.frame from tracer_data
+    do.call(rbind, lapply(seq_len(length(lengrp_lower)), function (i) {
+        length_col <- paste(
+            "length",
+            lengrp_lower[[i]],
+            lengrp_upper[[i]],
+            sep = "_")
+
+        out <- base_data
+        out$length <- mean(c(lengrp_upper, lengrp_lower))
+        out$weight <- tracer_data$weight
+        out$count <- round(
+            tracer_data[,length_col] *
+            exp(rnorm(nrow(base_data), 0, err_variance) - err_variance/2) *
+            survey_suitability[[i]])
+        return(out)
+    }))
+}

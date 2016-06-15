@@ -1,6 +1,7 @@
 library(mfdb)
 library(mfdbatlantis)
 library(utils)
+library(magrittr)
 
 mdb <- mfdb('Atlantis-Iceland')
 
@@ -25,12 +26,33 @@ for (fgName in c("Cod", "Haddock")) {
     fg_group <- is_functional_groups[c(is_functional_groups$Name == fgName),]
     cat("Importing functional group", fg_group$Name, "\n")
 
+    if (fg_group$Name == "Cod") {
+        length_group <- c(seq(0, 150, by = 10), 200)
+        sigma_per_cohort <- rep(2, fg_group$NumCohorts)
+        survey_suitability <- rep(0.1, length(length_group))
+        survey_sigma <- 0.1
+    } else if (fg_group$Name == "Haddock") {
+        length_group <- seq(0, 100, by = 5)
+        sigma_per_cohort <- rep(1, fg_group$NumCohorts)
+        survey_suitability <- rep(0.1, length(length_group))
+        survey_sigma <- 0.1
+    } else {
+        stop("Unknown group")
+    }
+
     is_fg_count <- atlantis_fg_tracer(is_dir, is_area_data, fg_group)
-    is_fg_count$species <- fg_group$MfdbCode
-    is_fg_count$areacell <- is_fg_count$area
-    # TODO: More selectivity (Look with Bjarki at Rgadget mean length simulat)
-    # TODO: Want a length selectivity curve for the gear, areas that you're interested in.
-    mfdb_import_survey(mdb, is_fg_count, data_source = paste0('atlantisTracer_', fgName))
+    # Survey only works on first month, in selected areas
+    is_fg_survey <- is_fg_count[
+            is_fg_count$area %in% paste0("Box", 30:39) &
+            is_fg_count$month %in% c(1),] %>%
+        atlantis_tracer_add_lengthgroups(length_group, sigma_per_cohort) %>%
+        atlantis_tracer_survey_select(length_group, survey_suitability, survey_sigma)
+    # Throw away empty rows
+    is_fg_survey <- is_fg_survey[is_fg_survey$count > 0,]
+
+    is_fg_survey$species <- fg_group$MfdbCode
+    is_fg_survey$areacell <- is_fg_survey$area
+    mfdb_import_survey(mdb, is_fg_survey, data_source = paste0('atlantis_survey_', fg_group$Name))
 }
 
 for (fgName in c("Cod")) {
