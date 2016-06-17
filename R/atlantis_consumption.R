@@ -1,8 +1,16 @@
-atlantis_stomach_content <- function (adir,
+atlantis_stomach_matrix <- function(adir) {
+    start_year <- attr(adir, 'start_year')
+
+    diet <- read.table(attr(adir, 'txt_diet'), header = TRUE, stringsAsFactors = FALSE)
+    diet$Year <- diet$Time %/% atl_year_days + start_year
+    diet$Month <- (diet$Time %% atl_year_days) %/% (365 / 12) + 1  # NB: Months aren't 30.333 here(?)
+    return(diet)
+}
+
+atlantis_stomach_content <- function(adir,
         consumption,
         predator_map,
-        prey_map,
-        start_year = attr(adir, 'start_year')) {
+        prey_map) {
     repeat_by_col <- function(df, col_name) {
         df[rep(seq_len(nrow(df)), df[, col_name]), names(df) != col_name]
     }
@@ -14,9 +22,7 @@ atlantis_stomach_content <- function (adir,
     consumption <- repeat_by_col(consumption, 'count')
     consumption$stomach_name <- seq_len(nrow(consumption))
 
-    diet <- read.table(attr(adir, 'txt_diet'), header = TRUE, stringsAsFactors = FALSE)
-    diet$Year <- diet$Time %/% atl_year_days + start_year
-    diet$Month <- (diet$Time %% atl_year_days) %/% (365 / 12) + 1  # NB: Months aren't 30.333 here(?)
+    diet <- atlantis_stomach_matrix(adir)
 
     predator_data <- data.frame(
         year = consumption$year,
