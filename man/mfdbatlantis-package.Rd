@@ -35,6 +35,19 @@ The mfdbatlantis package contains the following groups of functions:
 
 The best way to undestand the usage is to read through the supplied demo
 scripts in the \href{../demo}{the demo directory}.
+
+\preformatted{
+> library(mfdbatlantis)
+> demo('lake-victoria', package='mfdbatlantis', ask = FALSE)
+> demo('iceland', package='mfdbatlantis', ask = FALSE)
+}
+
+}
+
+\section{Acknowledgements}{
+This project has received funding from the European Union's Seventh Framework
+Programme for research, technological development and demonstration under grant
+agreement no.613571.
 }
 
 \author{
