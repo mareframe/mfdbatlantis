@@ -6,8 +6,7 @@ atlantis_fisheries <- function (adir) {
 
 atlantis_fisheries_catch <- function(adir,
         area_data,
-        fishery,
-        start_year = attr(adir, 'start_year')) {
+        fishery) {
     # Read in all (functional_group)_Catch_(fishery)
     nc_out <- ncdf4::nc_open(attr(adir, 'nc_catch'))
     fishery_vars <- list_nc_variables(nc_out, paste0('Catch_FC', fishery$Index, '$'))
@@ -23,7 +22,7 @@ atlantis_fisheries_catch <- function(adir,
     data.frame(
         area = dims$area,
         time = dims$time,
-        year = atlantis_time_to_years(dims$time) + start_year,
+        year = atlantis_time_to_years(dims$time) + attr(adir, 'start_year'),
         month = atlantis_time_to_months(dims$time),
         fishery = fishery$Code,
         functional_group = dims$functional_group,

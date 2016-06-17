@@ -1,6 +1,5 @@
 atlantis_temperature <- function (adir,
-        area_data,
-        start_year = attr(adir, 'start_year')) {
+        area_data) {
     nc_out <- ncdf4::nc_open(attr(adir, 'nc_out'))
 
     tracer <- ncdf4::ncvar_get(nc_out, 'Temp')
@@ -14,7 +13,7 @@ atlantis_temperature <- function (adir,
         depth = dims$depth,
         areacell = dims$areacell,
         time = factor(dims$time),
-        year = atlantis_time_to_years(dims$time) + start_year,
+        year = atlantis_time_to_years(dims$time) + attr(adir, 'start_year'),
         month = atlantis_time_to_months(dims$time),
         day = atlantis_time_to_days(dims$time),
         temperature = as.numeric(tracer),
@@ -24,8 +23,7 @@ atlantis_temperature <- function (adir,
 atlantis_fg_tracer <- function (adir,
         area_data,
         fg_group,
-        consumption = FALSE,
-        start_year = attr(adir, 'start_year')) {
+        consumption = FALSE) {
     # Read in both counts and mgN of all cohorts in group
     nc_out <- ncdf4::nc_open(attr(adir, 'nc_out'))
     fg_Nums <- as.numeric(fetch_nc_variables(nc_out, paste0(fg_group$Name, seq_len(as.character(fg_group$NumCohorts))), 'Nums'))
@@ -40,7 +38,7 @@ atlantis_fg_tracer <- function (adir,
     df_out <- data.frame(
         depth = dims$depth,
         area = dims$area,
-        year = atlantis_time_to_years(dims$time) + start_year,
+        year = atlantis_time_to_years(dims$time) + attr(adir, 'start_year'),
         month = atlantis_time_to_months(dims$time),
         day = atlantis_time_to_days(dims$time),
         group = as.character(fg_group$GroupCode),
@@ -64,7 +62,7 @@ atlantis_fg_tracer <- function (adir,
             stringsAsFactors = FALSE)
         df_eat <- data.frame(
             area = dims$area,
-            year = atlantis_time_to_years(dims$time) + start_year,
+            year = atlantis_time_to_years(dims$time) + attr(adir, 'start_year'),
             month = atlantis_time_to_months(dims$time),
             day = atlantis_time_to_days(dims$time),
             group = as.character(fg_group$GroupCode),
