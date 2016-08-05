@@ -11,6 +11,7 @@ is_run_options <- atlantis_run_options(is_dir)
 
 # Read in areas / surface temperatures, insert into mfdb
 is_area_data <- atlantis_read_areas(is_dir)
+is_area_data$size <- is_area_data$size %/% 1000
 is_temp <- atlantis_temperature(is_dir, is_area_data)
 mfdb_import_area(mdb, is_area_data)
 mfdb_import_temperature(mdb, is_temp[is_temp$depth == 1,])

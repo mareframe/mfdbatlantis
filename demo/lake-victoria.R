@@ -10,6 +10,7 @@ lv_run_options <- atlantis_run_options(lv_dir)
 
 # Read in areas / surface temperatures, insert into mfdb
 lv_area_data <- atlantis_read_areas(lv_dir)
+lv_area_data$size <- lv_area_data$size %/% 1000
 lv_temp <- atlantis_temperature(lv_dir, lv_area_data)
 mfdb_import_area(mdb, lv_area_data)
 mfdb_import_temperature(mdb, lv_temp[lv_temp$depth == 1,])
