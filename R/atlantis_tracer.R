@@ -77,7 +77,7 @@ atlantis_fg_tracer <- function (adir,
 
     # Add age to data
     age_class_size <- as.numeric(as.character(fg_group$NumAgeClassSize))
-    df_out$age <- df_out$cohort * age_class_size + age_class_size %/% 2
+    df_out$age <- (df_out$cohort * age_class_size) - (age_class_size %/% 2 + 1)
 
     # Maturity stage is mature iff cohort greater than FLAG_AGE_MAT
     df_out$maturity_stage = ifelse(df_out$cohort > fg_group$FLAG_AGE_MAT, 5, 1)
