@@ -19,7 +19,7 @@ atlantis_read_areas <- function (adir) {
         get_box_attribute(bgm_lines, "area", "size"),
         sort = FALSE)
     area_data$id <- seq_len(nrow(area_data))
-    area_data$size <- as.numeric(as.character(area_data$size))
+    area_data$size <- as.numeric(as.character(area_data$size)) %/% (1000 * 1000)  # m^2 --> km^2, MFDB only supports integer sizes
     return(area_data)
 }
 
