@@ -41,6 +41,15 @@ for (fgName in c("Cod", "Haddock")) {
     }
 
     is_fg_count <- atlantis_fg_tracer(is_dir, is_area_data, fg_group)
+
+    # Import entire Cod/Haddock content for one sample point so we can use this as a tracer value
+    is_fg_tracer <- is_fg_count[
+        is_fg_count$year == attr(is_dir, 'start_year') &
+        is_fg_count$month %in% c(1),]
+    is_fg_tracer$species <- fg_group$MfdbCode
+    is_fg_tracer$areacell <- is_fg_tracer$area
+    mfdb_import_survey(mdb, is_fg_tracer, data_source = paste0('atlantis_tracer_', fg_group$Name))
+
     # Survey only works on first month, in selected areas
     is_fg_survey <- is_fg_count[
             is_fg_count$area %in% paste0("Box", 30:39) &
