@@ -99,8 +99,8 @@ atlantis_tracer_add_lengthgroups <- function(
         # No point considering records with no fish
         tracer_data <- tracer_data[tracer_data$count > 0,]
 
-        # Add std.deviations to tracer data
-        tracer_data$length_stddev <- sigma_per_cohort[tracer_data$cohort]
+        # Add variance to tracer data
+        tracer_data$length_var <- sigma_per_cohort[tracer_data$cohort] ^ 2
 
         # Similar to rgadget:::distr (R/function.R, line 99)
         lengrp_lower <- length_group[-length(length_group)]  # Upper bounds for length groups
@@ -109,7 +109,7 @@ atlantis_tracer_add_lengthgroups <- function(
             pnorm(
                 rep(len, each = nrow(tracer_data)),
                 tracer_data$length,  # i.e. mean length
-                tracer_data$length_stddev)
+                sigma_per_cohort[tracer_data$cohort])
         }
         length_groups <- as.data.frame(matrix(
             rep(tracer_data$count, times = length(lengrp_upper)) * (len_dist(lengrp_upper) - len_dist(lengrp_lower)),
