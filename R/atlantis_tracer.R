@@ -147,7 +147,7 @@ atlantis_tracer_survey_select <- function(
             sep = "_")
 
         out <- base_data
-        out$length <- mean(c(lengrp_upper, lengrp_lower))
+        out$length <- mean(c(lengrp_upper[[i]], lengrp_lower[[i]]))
         out$weight <- tracer_data$weight
         out$count <- round(
             tracer_data[,length_col] *

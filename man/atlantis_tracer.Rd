@@ -35,7 +35,7 @@ atlantis_tracer_survey_select(
     \item{tracer_data}{Output of \link{atlantis_fg_tracer} or \link{atlantis_tracer_add_lengthgroups}}
     \item{length_group}{Vector of c(min, min, min, ..., max) lengths}
     \item{sigma_per_cohort}{Vector of sigma per-cohort in age group}
-    \item{survey_suitability}{Sutiability for vessel per-length-group}
+    \item{survey_suitability}{Suitability, 0..1 value for each length group to scale abundance}
     \item{survey_sigma}{Error rate per-length-group}
 }
 
