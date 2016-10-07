@@ -6,7 +6,7 @@ ok_group("atlantis_tracer_add_lengthgroups", {
         cohort = 1:5,
         length = c(11,22,33,44,55),
         count  = c(10),
-        stringAsFactors = TRUE)
+        stringsAsFactors = TRUE)
     length_group <- seq(0, 100, by = 10)
     sigma_per_cohort <- seq(0.1, 0.5, by = 0.1)
 
