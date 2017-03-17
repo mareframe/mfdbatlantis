@@ -29,3 +29,29 @@ atlantis_fisheries_catch <- function(adir,
         weight_total = as.numeric(catch_tonnes),
         stringsAsFactors = TRUE)
 }
+
+atlantis_fisheries_discard <- function(adir,
+        area_data,
+        fishery) {
+    # Read in all (functional_group)_Catch_(fishery)
+    nc_out <- ncdf4::nc_open(attr(adir, 'nc_catch'))
+    fishery_vars <- list_nc_variables(nc_out, paste0('Discard_FC', fishery$Index, '$'))
+    discard_tonnes <- fetch_nc_variables(nc_out, fishery_vars)
+    dims <- expand.grid(
+        area = as.character(area_data$name),
+        time = nc_out$dim$t$vals,
+        functional_group = sub('_.*', '', fishery_vars),
+        stringsAsFactors = TRUE)
+    if (nrow(dims) == 0) return(data.frame())
+
+    # Combine with discard data
+    data.frame(
+        area = dims$area,
+        time = dims$time,
+        year = atlantis_time_to_years(dims$time) + attr(adir, 'start_year'),
+        month = atlantis_time_to_months(dims$time),
+        fishery = fishery$Code,
+        functional_group = dims$functional_group,
+        weight_total = as.numeric(discard_tonnes),
+        stringsAsFactors = TRUE)
+}

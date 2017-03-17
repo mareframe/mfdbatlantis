@@ -100,6 +100,11 @@ mfdb_import_vessel_taxonomy(mdb, data.frame(
     full_name = is_fisheries$Name,
     stringsAsFactors = FALSE))
 
+mfdb_import_tow_taxonomy(mdb, data.frame(
+    name = c("All", "C", "D"),
+    t_group = c(NA, "All", "All"),
+    stringsAsFactors = FALSE))
+
 for (fisheryCode in is_fisheries$Code) {
     fishery <- is_fisheries[is_fisheries$Code == fisheryCode,]
     cat("Importing fishery", fisheryCode, "\n")
@@ -118,8 +123,33 @@ for (fisheryCode in is_fisheries$Code) {
         month = is_catch$month,
         areacell = is_catch$area,
         vessel = is_catch$fishery,
+        tow = "C",
         species = is_catch$species,
         weight_total = is_catch$weight_total,
-        count = c(NA),
-        stringsAsFactors = TRUE), data_source = paste0("atlantisFishery_", fisheryCode))
+        stringsAsFactors = TRUE), data_source = paste0("atlantisFishery_", fisheryCode, "_C"))
+
+    is_discard <- atlantis_fisheries_discard(is_dir, is_area_data, fishery)
+    if (nrow(is_discard) == 0) next
+
+    # Species column that maps to MFDB code
+    is_discard$species <- is_discard$functional_group
+    levels(is_discard$species) <- is_functional_groups[match(
+        levels(is_discard$functional_group),
+        is_functional_groups$GroupCode), 'MfdbCode']
+
+    mfdb_import_survey(mdb, data.frame(
+        year = is_discard$year,
+        month = is_discard$month,
+        areacell = is_discard$area,
+        vessel = is_discard$fishery,
+        tow = "D",
+        species = is_discard$species,
+        weight_total = is_discard$weight_total,
+        stringsAsFactors = TRUE), data_source = paste0("atlantisFishery_", fisheryCode, "_D"))
 }
+
+# Query examples:-
+# # Catch and discard for fisheries
+# mfdb_sample_totalweight(mdb, c('vessel', 'tow'), list(vessel = mfdb_unaggregated(), tow = 'All'))
+# # Just catch for fisheries
+# mfdb_sample_totalweight(mdb, c('vessel', 'tow'), list(vessel = mfdb_unaggregated(), tow = 'C'))

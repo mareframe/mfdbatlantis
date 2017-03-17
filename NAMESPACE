@@ -5,6 +5,7 @@ export(atlantis_directory)
 # R/atlantis_fisheries.R
 export(atlantis_fisheries)
 export(atlantis_fisheries_catch)
+export(atlantis_fisheries_discard)
 # R/atlantis_functions.R
 export(atlantis_read_areas)
 export(atlantis_functional_groups)
