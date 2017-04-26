@@ -9,7 +9,7 @@ atlantis_temperature <- function (adir,
         time = nc_out$dim$t$vals,
         stringsAsFactors = TRUE)
 
-    data.frame(
+    atlantis_filter_month_13(data.frame(
         depth = dims$depth,
         areacell = dims$areacell,
         time = factor(dims$time),
@@ -17,7 +17,7 @@ atlantis_temperature <- function (adir,
         month = atlantis_time_to_months(dims$time),
         day = atlantis_time_to_days(dims$time),
         temperature = as.numeric(tracer),
-        stringsAsFactors = TRUE)
+        stringsAsFactors = TRUE))
 }
 
 atlantis_fg_tracer <- function (adir,
@@ -82,7 +82,7 @@ atlantis_fg_tracer <- function (adir,
     # Maturity stage is mature iff cohort greater than FLAG_AGE_MAT
     df_out$maturity_stage = ifelse(df_out$cohort > fg_group$FLAG_AGE_MAT, 5, 1)
 
-    return(df_out)
+    return(atlantis_filter_month_13(df_out))
 }
 
 # Expand length (mean) to buckets of length_groups

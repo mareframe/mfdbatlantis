@@ -62,3 +62,8 @@ atlantis_time_to_months <- function (atl_time) {
 atlantis_time_to_days <- function (atl_time) {
     (((atl_time %% atl_year_secs) %% atl_month_secs) / atl_day_secs) + 1
 }
+
+# Remove everything from a data.frame with month 13
+atlantis_filter_month_13 <- function (df) {
+    df[df$month != 13,]
+}

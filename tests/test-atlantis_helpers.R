@@ -47,3 +47,20 @@ ok_group("atlantis_time_to_days", local({
             1)
         ), "atlantis_time_to_days")
 }, asNamespace('mfdbatlantis')))
+
+ok_group("atlantis_filter_month_13", local({
+    ok(cmp(
+        atlantis_filter_month_13(data.frame(
+            row.names = as.character(1:20),
+            a = as.numeric(1:20),
+            month = as.numeric(c(1:15, 13, 13, 13, 13, 13)),
+            b = as.numeric(8),
+            stringsAsFactors = FALSE)),
+        data.frame(
+            row.names = as.character(c(1:12, 14, 15)),
+            a = c(1:12, 14, 15),
+            month = c(1:12, 14, 15),
+            b = 8,
+            stringsAsFactors = FALSE)
+        ), "atlantis_filter_month_13")
+}, asNamespace('mfdbatlantis')))

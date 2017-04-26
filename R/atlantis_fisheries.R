@@ -19,7 +19,7 @@ atlantis_fisheries_catch <- function(adir,
     if (nrow(dims) == 0) return(data.frame())
 
     # Combine with catch data
-    data.frame(
+    atlantis_filter_month_13(data.frame(
         area = dims$area,
         time = dims$time,
         year = atlantis_time_to_years(dims$time) + attr(adir, 'start_year'),
@@ -27,7 +27,7 @@ atlantis_fisheries_catch <- function(adir,
         fishery = fishery$Code,
         functional_group = dims$functional_group,
         weight_total = as.numeric(catch_tonnes),
-        stringsAsFactors = TRUE)
+        stringsAsFactors = TRUE))
 }
 
 atlantis_fisheries_discard <- function(adir,
@@ -45,7 +45,7 @@ atlantis_fisheries_discard <- function(adir,
     if (nrow(dims) == 0) return(data.frame())
 
     # Combine with discard data
-    data.frame(
+    atlantis_filter_month_13(data.frame(
         area = dims$area,
         time = dims$time,
         year = atlantis_time_to_years(dims$time) + attr(adir, 'start_year'),
@@ -53,5 +53,5 @@ atlantis_fisheries_discard <- function(adir,
         fishery = fishery$Code,
         functional_group = dims$functional_group,
         weight_total = as.numeric(discard_tonnes),
-        stringsAsFactors = TRUE)
+        stringsAsFactors = TRUE))
 }
