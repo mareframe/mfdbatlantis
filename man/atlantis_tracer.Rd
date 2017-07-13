@@ -19,7 +19,8 @@ atlantis_fg_tracer(adir,
 atlantis_tracer_add_lengthgroups(
         tracer_data,
         length_group,
-        sigma_per_cohort)
+        sigma_per_cohort
+        keep_zero_counts = FALSE)
 atlantis_tracer_survey_select(
         tracer_data,
         length_group,
@@ -35,6 +36,7 @@ atlantis_tracer_survey_select(
     \item{tracer_data}{Output of \link{atlantis_fg_tracer} or \link{atlantis_tracer_add_lengthgroups}}
     \item{length_group}{Vector of c(min, min, min, ..., max) lengths}
     \item{sigma_per_cohort}{Vector of sigma per-cohort in age group}
+    \item{keep_zero_counts}{Logical to indicate whether to keep areas with count of 0}
     \item{survey_suitability}{Suitability, 0..1 value for each length group to scale abundance}
     \item{survey_sigma}{Error rate per-length-group}
 }

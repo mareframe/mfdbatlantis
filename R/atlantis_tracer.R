@@ -89,7 +89,8 @@ atlantis_fg_tracer <- function (adir,
 atlantis_tracer_add_lengthgroups <- function(
         tracer_data,  # Output of fg_tracer
         length_group,  # vector of c(min, min, min, ..., max)
-        sigma_per_cohort  # length std.dev per age in functional group
+        sigma_per_cohort,  # length std.dev per age in functional group
+        keep_zero_counts = F # logical to keep areas with zero counts
         ) {
 
         if (length(length_group) < 2) {
@@ -97,10 +98,14 @@ atlantis_tracer_add_lengthgroups <- function(
         }
 
         # No point considering records with no fish
-        tracer_data <- tracer_data[tracer_data$count > 0,]
+        # unless you want to keep them for bootstrapping purposes later on
+        # conditional added by pfrater - July 12, 2017
+        if (!keep_zero_counts) {
+            tracer_data <- tracer_data[tracer_data$count > 0,]
+        }
 
         # Add variance to tracer data
-        tracer_data$length_var <- sigma_per_cohort[tracer_data$cohort] ^ 2
+        tracer_data$length_var <- sigma_per_cohort[tracer_data$cohort]
 
         # Similar to rgadget:::distr (R/function.R, line 99)
         lengrp_lower <- length_group[-length(length_group)]  # Upper bounds for length groups
@@ -129,7 +134,6 @@ atlantis_tracer_survey_select <- function(
         ) {
     lengrp_lower <- length_group[-length(length_group)]  # Upper bounds for length groups
     lengrp_upper <- length_group[-1]  # Lower bounds for length groups
-    err_variance <- survey_sigma^2
 
     # Strip columns we will replace from tracer_data
     base_names <- grep(
@@ -151,7 +155,7 @@ atlantis_tracer_survey_select <- function(
         out$weight <- tracer_data$weight
         out$count <- round(
             tracer_data[,length_col] *
-            exp(rnorm(nrow(base_data), 0, err_variance) - err_variance/2) *
+            exp(rnorm(nrow(base_data), 0, survey_sigma) - survey_sigma/2) *
             survey_suitability[[i]])
         return(out)
     }))
